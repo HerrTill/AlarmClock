@@ -28,6 +28,8 @@
 #define  SCR_RESET    BITBAND(GPIO_PORTA_DATA_R,3)
 #define  SCR_CSX      BITBAND(GPIO_PORTA_DATA_R,7)
 
+#define LED_Stripe    *(BITBAND(GPIO_PORTE_DATA_R,5))
+
 // The registers for setting the brightness of the RGB LED
 // 0 is off, 4096 is full brightness
 #define RGB_BLU_REG   PWM0_2_CMPA_R

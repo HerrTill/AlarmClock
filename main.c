@@ -212,7 +212,6 @@ int8_t initHw()
 
         // CONFIGUE RGB LED
 
-
         * ( BITBAND(GPIO_PORTE_DATA_R,4) ) =0;
         * ( BITBAND(GPIO_PORTC_DATA_R,4) ) =0;
         * ( BITBAND(GPIO_PORTC_DATA_R,5) ) =0;
@@ -226,18 +225,8 @@ int8_t initHw()
         __asm(" NOP");                                   // wait 3 clocks
         __asm(" NOP");
         __asm(" NOP");
-        SYSCTL_SRPWM_R |= SYSCTL_SRPWM_R0;                // reset PWM0 module
-        SYSCTL_SRPWM_R &= ~SYSCTL_SRPWM_R0;               // leave reset state
-        while (!(SYSCTL_PRPWM_R & SYSCTL_PRPWM_R0));     // wait until ready
-        PWM0_3_CTL_R = 0;// &= ~PWM_0_CTL_ENABLE;               // turn-off PWM0 generator 3
-        PWM0_3_GENA_R = PWM_3_GENA_ACTCMPBD_ONE | PWM_3_GENA_ACTLOAD_ZERO;
-                                                       // Turn on when number hit going down; turn off at load
-        PWM0_3_LOAD_R = 4096;                            // set period to 66.67 MHz sys clock / 2 / 4096 = 8.138 kHz
-                                                       // also using 4096 because load overrides cmpb
-        PWM0_3_CMPA_R = 1000;                               // light off (0 is off, 4096 is always on)
-        PWM0_3_CTL_R |= PWM_3_CTL_ENABLE;                // turn-on PWM0 generator 3
-        PWM0_ENABLE_R = PWM_ENABLE_PWM6EN;               // enable outputs
 
+/*   good working code
         SYSCTL_SRPWM_R |= SYSCTL_SRPWM_R0;                // reset PWM0 module
         SYSCTL_SRPWM_R &= ~SYSCTL_SRPWM_R0;               // leave reset state
         while (!(SYSCTL_PRPWM_R & SYSCTL_PRPWM_R0));     // wait until ready
@@ -246,22 +235,45 @@ int8_t initHw()
                                                        // Turn on when number hit going down; turn off at load
         PWM0_3_LOAD_R = 4096;                            // set period to 66.67 MHz sys clock / 2 / 4096 = 8.138 kHz
                                                        // also using 4096 because load overrides cmpb
-        PWM0_3_CMPB_R = 0;                               // light off (0 is off, 4096 is always on)
+        PWM0_3_CMPB_R = 2000;                               // light off (0 is off, 4096 is always on)
         PWM0_3_CTL_R |= PWM_3_CTL_ENABLE;                // turn-on PWM0 generator 0
-        PWM0_ENABLE_R = PWM_ENABLE_PWM7EN;               // enable outputs
+        PWM0_ENABLE_R |= PWM_ENABLE_PWM7EN;               // enable outputs
+*/
 
         SYSCTL_SRPWM_R |= SYSCTL_SRPWM_R0;                // reset PWM0 module
         SYSCTL_SRPWM_R &= ~SYSCTL_SRPWM_R0;               // leave reset state
         while (!(SYSCTL_PRPWM_R & SYSCTL_PRPWM_R0));     // wait until ready
-        PWM0_2_CTL_R = 0;// &= ~PWM_0_CTL_ENABLE;               // turn-off PWM0 generator 0
+        PWM0_3_CTL_R = 0;// &= ~PWM_0_CTL_ENABLE;               // turn-off PWM0 generator 0
+        PWM0_3_GENB_R = PWM_3_GENB_ACTCMPBD_ONE | PWM_3_GENB_ACTLOAD_ZERO;
+                                                       // Turn on when number hit going down; turn off at load
+        PWM0_3_GENA_R = PWM_3_GENA_ACTCMPAD_ONE | PWM_3_GENA_ACTLOAD_ZERO;
+                                                       // Turn on when number hit going down; turn off at load
+        PWM0_2_GENA_R = PWM_2_GENA_ACTCMPAD_ONE | PWM_2_GENA_ACTLOAD_ZERO;
+                                                         // Turn on when number hit going down; turn off at load
+
+        PWM0_3_LOAD_R = 4096;                            // set period to 66.67 MHz sys clock / 2 / 4096 = 8.138 kHz
+        PWM0_2_LOAD_R = 4096;                            // set period to 66.67 MHz sys clock / 2 / 4096 = 8.138 kHz
+                                                           // also using 4096 because load overrides cmpb
+        PWM0_2_CMPA_R = 2000;                               // light off (0 is off, 4096 is always on)
+                                                           // also using 4096 because load overrides cmpb
+        PWM0_3_CMPB_R = 2000;                               // light off (0 is off, 4096 is always on)
+        PWM0_3_CMPA_R = 4000;                               // light off (0 is off, 4096 is always on)
+        PWM0_3_CTL_R |= PWM_3_CTL_ENABLE;                // turn-on PWM0 generator 0
+        PWM0_2_CTL_R |= PWM_2_CTL_ENABLE;                // turn-on PWM0 generator 0
+        PWM0_ENABLE_R |= (PWM_ENABLE_PWM7EN | PWM_ENABLE_PWM6EN|PWM_ENABLE_PWM4EN);               // enable outputs
+/*
+        SYSCTL_SRPWM_R |= SYSCTL_SRPWM_R0;                // reset PWM0 module
+        SYSCTL_SRPWM_R &= ~SYSCTL_SRPWM_R0;               // leave reset state
+        while (!(SYSCTL_PRPWM_R & SYSCTL_PRPWM_R0));     // wait until ready
+        PWM0_2_CTL_R = 2000;// &= ~PWM_0_CTL_ENABLE;               // turn-off PWM0 generator 0
         PWM0_2_GENA_R = PWM_2_GENA_ACTCMPBD_ONE | PWM_2_GENA_ACTLOAD_ZERO;
                                                          // Turn on when number hit going down; turn off at load
         PWM0_2_LOAD_R = 4096;                            // set period to 66.67 MHz sys clock / 2 / 4096 = 8.138 kHz
                                                          // also using 4096 because load overrides cmpb
-        PWM0_2_CMPA_R = 0;                               // light off (0 is off, 4096 is always on)
+        PWM0_2_CMPA_R = 2000;                               // light off (0 is off, 4096 is always on)
         PWM0_2_CTL_R |= PWM_2_CTL_ENABLE;                // turn-on PWM0 generator 0
         PWM0_ENABLE_R = PWM_ENABLE_PWM4EN;               // enable outputs
-
+*/
 
 
 
@@ -281,6 +293,8 @@ void timingIncrement(){
     if(timeCount%1000 == 0){
       //LED_RED ^= 1;
       //LED_BLUE ^= 1;
+
+
 
 
     }
@@ -326,11 +340,23 @@ int main(void)
     //LED_RED = 0;
     //LED_BLUE = 1;
 
-    RGB_RED_REG = 2000;
+/*
+    Delay1ms(50);
+    RGB_RED_REG= 0;
+    Delay1ms(50);
+    RGB_RED_REG = 4096;
+    Delay1ms(50);
 
-    RGB_BLU_REG = 10;
+
+   RGB_BLU_REG = 10;
 
     RGB_GRN_REG = 10;
+
+*/
+
+
+
+    LED_Stripe = 0;
 
 
 
@@ -384,6 +410,9 @@ int main(void)
 
   //      if(But2_pressed == true) LED_RED = 1;
  //       else LED_RED = 0;
+
+        if (But2_pressed == true) RGB_RED_REG = 1000;
+        if (But3_pressed == true) RGB_RED_REG = 4000;
 
 
 
