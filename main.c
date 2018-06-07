@@ -6,10 +6,19 @@
 #include "Pins.h"
 
 
+extern const uint16_t backg_alarm[];
+extern const uint16_t backg[];
+//extern const unsigned char backg2;
 
 int But1_history = 0xFF , But2_history = 0xFF, But3_history= 0xFF;
 
 bool But1_pressed= false, But2_pressed= false, But3_pressed = false;
+
+bool alarm1_active =false, redraw=true;
+
+int aHour=0, aMin=0, cHour=12, cMin=59, alarm=0;
+
+int focus;
 
 int But3_count = 0;
 
@@ -285,19 +294,33 @@ int8_t initHw()
 return 0;
 }
 
-int timeCount = 0 ;
+int timeCount = 55000 ;
 uint16_t status= 0;
 void timingIncrement(){
     timeCount++;
-
     if(timeCount%1000 == 0){
-      //LED_RED ^= 1;
-      //LED_BLUE ^= 1;
-
-
-
-
+      LED_RED ^= 1;
+      LED_BLUE ^= 1;
     }
+    if(timeCount%60000 == 0){
+      LED_RED ^= 1;
+      LED_BLUE ^= 1;
+        redraw=true;
+        cMin++;
+        if(cMin%60==0){
+            cMin=0;
+            cHour++;
+            if(cHour%24==0){
+                cHour=0;
+                timeCount=0;
+            }
+        }
+
+        if(alarm1_active==true && cHour==aHour && cMin==aMin)status=2;
+    }
+
+    if(timeCount%500==0)alarm^=1;
+
 
     But1_history = (But1_history*2 + BUTTON_0) & 0xFF;
     But2_history = (But2_history*2 + BUTTON_1) & 0xFF;
@@ -317,7 +340,9 @@ void timingIncrement(){
 
     if (But3_count == 3000){
         status ^= 1;
+        focus=1;
         LED_RED ^= 1;
+        But3_count = 0;
     }
 
 
@@ -334,88 +359,119 @@ int main(void)
 
     initHw();
     ST7735_SetRotation(3);
-    uint16_t color_white;
-    uint16_t color_black;
-
-    //LED_RED = 0;
-    //LED_BLUE = 1;
-
-/*
-    Delay1ms(50);
-    RGB_RED_REG= 0;
-    Delay1ms(50);
-    RGB_RED_REG = 4096;
-    Delay1ms(50);
-
-
-   RGB_BLU_REG = 10;
-
-    RGB_GRN_REG = 10;
-
-*/
-
-
-
     LED_Stripe = 0;
+
+
 
 
 
     while(1)
     {
         ST7735_SetRotation(3);
-        color_white = ST7735_Color565(255,255,255);
-        color_black = ST7735_Color565(0,0,0);
 
-       // ST7735_SetCursor(10,10);
-        //ST7735_OutChar('G');
+        if (status==0 && redraw==true){
+            //load clock background
+            ST7735_DrawBitmap(0,128,backg,160,128);
 
-       // ST7735_DrawString(1, 1, "HELLO WORLD ggg!",color_white, 1);
+            //check if alarm is activated
+            if(alarm1_active==true){
+                //display sign
+            }
 
-        ST7735_PlotLine(50);
+            //display time
 
-        if (status==0){
-            ST7735_DrawChar( 0,1,' ',color_black, color_white, 1);
-            ST7735_DrawChar( 7,1,'C',color_black, color_white, 1);
-            ST7735_DrawChar(13,1,'L',color_black, color_white, 1);
-            ST7735_DrawChar(19,1,'O',color_black, color_white, 1);
-            ST7735_DrawChar(25,1,'C',color_black, color_white, 1);
-            ST7735_DrawChar(31,1,'K',color_black, color_white, 1);
+            char h1, h2,m1,m2;
 
-            ST7735_DrawChar(43,1,'A',color_white, color_black, 1);
-            ST7735_DrawChar(49,1,'L',color_white, color_black, 1);
-            ST7735_DrawChar(55,1,'A',color_white, color_black, 1);
-            ST7735_DrawChar(61,1,'R',color_white, color_black, 1);
-            ST7735_DrawChar(67,1,'M',color_white, color_black, 1);
+            h1= (char)(cHour/10 + 0x30);
+            h2= (char)(cHour%10 + 0x30);
+            m1= (char)(cMin/10 + 0x30);
+            m2= (char)(cMin%10 + 0x30);
 
 
+            ST7735_SetTextColor(ST7735_Color565(255,255,255));
 
-
-        }else {
-            ST7735_DrawChar( 0,1,' ',color_white, color_black, 1);
-            ST7735_DrawChar( 7,1,'C',color_white, color_black, 1);
-            ST7735_DrawChar(13,1,'L',color_white, color_black, 1);
-            ST7735_DrawChar(19,1,'O',color_white, color_black, 1);
-            ST7735_DrawChar(25,1,'C',color_white, color_black, 1);
-            ST7735_DrawChar(31,1,'K',color_white, color_black, 1);
-
-            ST7735_DrawChar(43,1,'A',color_black, color_white, 1);
-            ST7735_DrawChar(49,1,'L',color_black, color_white, 1);
-            ST7735_DrawChar(55,1,'A',color_black, color_white, 1);
-            ST7735_DrawChar(61,1,'R',color_black, color_white, 1);
-            ST7735_DrawChar(67,1,'M',color_black, color_white, 1);
-        }
-
-        if(But1_pressed == true) LED_BLUE = 1;
-        else LED_BLUE = 0;
-
-  //      if(But2_pressed == true) LED_RED = 1;
- //       else LED_RED = 0;
-
-        if (But2_pressed == true) RGB_RED_REG = 1000;
-        if (But3_pressed == true) RGB_RED_REG = 4000;
+            ST7735_SetRotation(3);
+            ST7735_SetCursor(10,5);
+            ST7735_OutChar(h1);
+            ST7735_SetCursor(11,5);
+            ST7735_OutChar(h2);
+            ST7735_SetCursor(12,5);
+            ST7735_OutChar(':');
+            ST7735_SetCursor(13,5);
+            ST7735_OutChar(m1);
+            ST7735_SetCursor(14,5);
+            ST7735_OutChar(m2);
 
 
 
+            redraw=false;
 
+
+
+        }else if (status==1){
+            //load alarm background
+            ST7735_DrawBitmap(0,128,backg_alarm,160,128);
+
+            //activate/ deactivate
+
+            if(But2_pressed==true || But3_pressed == true) focus=2;
+
+            if(focus==1 && But1_pressed==true){
+                alarm1_active=true;
+                focus=3;
+            }
+            if(focus==2 && But1_pressed==true){
+                alarm1_active=false;
+                focus=3;
+            }
+
+            //set hour for alarm
+            if(focus==3 && But2_pressed==true){
+                if(aHour%24==0){
+                    aHour=0;
+                }else {aHour++;}
+            }
+            if(focus==3 && But3_pressed==true){
+                if(aHour==0){
+                    aHour=23;
+                }else {aHour--;}
+            }
+            if(focus==3 && But1_pressed==true)focus=4;
+
+            //set minute alarm
+            if(focus==4 && But2_pressed==true){
+                if(aMin%60==0){
+                    aMin=0;
+                }else {aMin++;}
+            }
+            if(focus==4 && But3_pressed==true){
+                if(aMin==0){
+                    aMin=59;
+                }else {aHour--;}
+            }
+            if(focus==4 && But1_pressed==true)focus=5;
+
+            //sends back to clock layout
+            if(focus==5 &&But1_pressed==true) status=0;
+
+       }else if (status==2){
+           //alarm fires
+           if(alarm==0){
+               LED_Stripe=1;
+               RGB_RED_REG=4000;
+               RGB_BLU_REG=0;
+               RGB_GRN_REG=0;
+           }else{
+               LED_Stripe=0;
+               RGB_RED_REG=0;
+               RGB_BLU_REG=4000;
+               RGB_GRN_REG=0;
+           }
+
+           if(But1_pressed == true){
+               alarm1_active=false;
+               status=0;
+           }
+       }
     }
 }
