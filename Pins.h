@@ -38,8 +38,8 @@
 
 
 
-#define  BUTTON_0        * (BITBAND(GPIO_PORTC_DATA_R,6))
-#define  BUTTON_1        * (BITBAND(GPIO_PORTC_DATA_R,7))
+#define  BUTTON_1        * (BITBAND(GPIO_PORTC_DATA_R,6))
+#define  BUTTON_0        * (BITBAND(GPIO_PORTC_DATA_R,7))
 #define  BUTTON_2        * (BITBAND(GPIO_PORTF_DATA_R,2))
 
 #define BT_0 (0x01)

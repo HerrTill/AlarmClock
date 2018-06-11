@@ -14,11 +14,11 @@ int But1_history = 0xFF , But2_history = 0xFF, But3_history= 0xFF;
 
 bool But1_pressed= false, But2_pressed= false, But3_pressed = false;
 
-bool alarm1_active =false, redraw=true;
+bool alarm1_active =false, redraw=true, busy=false;
 
-int aHour=0, aMin=0, cHour=12, cMin=59, alarm=0;
+int aHour=11, aMin=11, cHour=12, cMin=59, alarm=0;
 
-int focus;
+int focus=1, wait=0;
 
 int But3_count = 0;
 
@@ -80,6 +80,11 @@ int8_t initHw()
         GPIO_PORTC_DIR_R  |=                     BT_5 | BT_4                                  ;
         GPIO_PORTC_DR2R_R |=                     BT_5 | BT_4                                  ;
         GPIO_PORTC_DEN_R  |=                     BT_5 | BT_4                                  ;
+
+        GPIO_PORTD_LOCK_R  = 0x4c4f434b;
+        GPIO_PORTD_CR_R   |= BT_7;
+        GPIO_PORTD_LOCK_R  = 0;
+
 
         GPIO_PORTD_DIR_R  |=       BT_7 | BT_6 |                      BT_2                    ;
         GPIO_PORTD_DR8R_R |=       BT_7 | BT_6 |                      BT_2                    ;
@@ -295,17 +300,19 @@ return 0;
 }
 
 int timeCount = 55000 ;
-uint16_t status= 0;
+uint16_t status= 1;
+int hit_3000=0;
 void timingIncrement(){
     timeCount++;
     if(timeCount%1000 == 0){
-      LED_RED ^= 1;
-      LED_BLUE ^= 1;
+     // LED_RED ^= 1;
+     // LED_BLUE ^= 1;
+     // LED_YELLOW ^=1;
     }
     if(timeCount%60000 == 0){
-      LED_RED ^= 1;
-      LED_BLUE ^= 1;
-        redraw=true;
+     // LED_RED ^= 1;
+      //LED_BLUE ^= 1;
+        if (status==0)redraw=true;
         cMin++;
         if(cMin%60==0){
             cMin=0;
@@ -338,11 +345,21 @@ void timingIncrement(){
     if (But3_pressed == true) But3_count++;
     else But3_count = 0;
 
-    if (But3_count == 3000){
-        status ^= 1;
-        focus=1;
-        LED_RED ^= 1;
+    if (But3_count > 3000 && status==0){
+
+        hit_3000=1;
+
         But3_count = 0;
+    }
+
+    if(But3_pressed==false && hit_3000==1){
+        status = 1;
+        focus =1;
+        redraw=true;
+
+        hit_3000 =0;
+
+
     }
 
 
@@ -369,7 +386,8 @@ int main(void)
     {
         ST7735_SetRotation(3);
 
-        if (status==0 && redraw==true){
+
+       if (status==0 && redraw==true){
             //load clock background
             ST7735_DrawBitmap(0,128,backg,160,128);
 
@@ -408,51 +426,168 @@ int main(void)
 
 
 
-        }else if (status==1){
+        }else if (status==1 ){
             //load alarm background
-            ST7735_DrawBitmap(0,128,backg_alarm,160,128);
+           if(redraw==true || wait==1){
+                ST7735_SetRotation(3);
+                ST7735_DrawBitmap(0,128,backg_alarm,160,128);
+
+                //highlight focus
+                if(focus == 1){
+                    ST7735_FillRect(35,25,30,14,ST7735_Color565(255,0,0));
+                }else if (focus==2){
+                    ST7735_FillRect(73,25,35,14,ST7735_Color565(255,0,0));
+                }else if (focus==3){
+                    ST7735_FillRect(55,57,20,14,ST7735_Color565(255,0,0));
+                }else if (focus==4){
+                    ST7735_FillRect(75,57,20,14,ST7735_Color565(255,0,0));
+                }else if (focus==5){
+                    ST7735_FillRect(63,107,25,14,ST7735_Color565(255,0,0));
+                }
+
+                //write basic words
+
+                ST7735_SetCursor(8,0);
+                ST7735_OutChar('A');
+                ST7735_SetCursor(9,0);
+                ST7735_OutChar('L');
+                ST7735_SetCursor(10,0);
+                ST7735_OutChar('A');
+                ST7735_SetCursor(11,0);
+                ST7735_OutChar('R');
+                ST7735_SetCursor(12,0);
+                ST7735_OutChar('M');
+                ST7735_SetCursor(14,0);
+                ST7735_OutChar('1');
+
+
+                ST7735_SetCursor(7,3);
+                ST7735_OutChar('o');
+                ST7735_SetCursor(8,3);
+                ST7735_OutChar('n');
+
+                ST7735_SetCursor(11,3);
+                ST7735_OutChar('|');
+
+                ST7735_SetCursor(13,3);
+                ST7735_OutChar('o');
+                ST7735_SetCursor(14,3);
+                ST7735_OutChar('f');
+                ST7735_SetCursor(15,3);
+                ST7735_OutChar('f');
+
+                char h1, h2,m1,m2;
+
+                h1= (char)(aHour/10 + 0x30);
+                h2= (char)(aHour%10 + 0x30);
+                m1= (char)(aMin/10 + 0x30);
+                m2= (char)(aMin%10 + 0x30);
+
+                ST7735_SetCursor(10,6);
+                ST7735_OutChar(h1);
+                ST7735_SetCursor(11,6);
+                ST7735_OutChar(h2);
+                ST7735_SetCursor(12,6);
+                ST7735_OutChar(':');
+                ST7735_SetCursor(13,6);
+                ST7735_OutChar(m1);
+                ST7735_SetCursor(14,6);
+                ST7735_OutChar(m2);
+
+                ST7735_SetCursor(11,11);
+                ST7735_OutChar('s');
+                ST7735_SetCursor(12,11);
+                ST7735_OutChar('e');
+                ST7735_SetCursor(13,11);
+                ST7735_OutChar('t');
+
+                redraw=false;
+
+                if(But1_pressed)busy=true;
+                if(But2_pressed)busy=true;
+                if(But3_pressed)busy=true;
+
+                wait=0;
+           }
 
             //activate/ deactivate
+           if(busy==false){
+               if(focus==1 || focus==2){
+                   if(But1_pressed==true || But2_pressed == true){
+                       if(focus==1){ focus=2;}else
 
-            if(But2_pressed==true || But3_pressed == true) focus=2;
+                       if(focus==2) focus=1;
 
-            if(focus==1 && But1_pressed==true){
-                alarm1_active=true;
-                focus=3;
-            }
-            if(focus==2 && But1_pressed==true){
-                alarm1_active=false;
-                focus=3;
-            }
+                       redraw= true;
+                    }
+               }
 
-            //set hour for alarm
-            if(focus==3 && But2_pressed==true){
-                if(aHour%24==0){
-                    aHour=0;
-                }else {aHour++;}
-            }
-            if(focus==3 && But3_pressed==true){
-                if(aHour==0){
-                    aHour=23;
-                }else {aHour--;}
-            }
-            if(focus==3 && But1_pressed==true)focus=4;
+                if(focus==1 && But3_pressed==true){
+                    alarm1_active=true;
+                    focus=3;
+                    redraw= true;
+                    wait=1;
+                }
+                if(focus==2 && But3_pressed==true){
+                    alarm1_active=false;
+                    focus=3;
+                    redraw= true;
+                    wait=1;
+                }
 
-            //set minute alarm
-            if(focus==4 && But2_pressed==true){
-                if(aMin%60==0){
-                    aMin=0;
-                }else {aMin++;}
-            }
-            if(focus==4 && But3_pressed==true){
-                if(aMin==0){
-                    aMin=59;
-                }else {aHour--;}
-            }
-            if(focus==4 && But1_pressed==true)focus=5;
+                //set hour for alarm
+                if(focus==3 && But1_pressed==true && wait==0){
+                    if(aHour==23){
+                        aHour=0;
+                    }else {aHour++;}
 
-            //sends back to clock layout
-            if(focus==5 &&But1_pressed==true) status=0;
+                    wait=1;
+                }
+                if(focus==3 && But2_pressed==true && wait==0){
+                    if(aHour==0){
+                        aHour=23;
+                    }else {aHour--;}
+
+                    wait=1;
+                }
+                if(focus==3 && But3_pressed==true && wait==0){
+                    focus=4;
+                    redraw= true;
+                    wait=1;
+                }
+
+                //set minute alarm
+                if(focus==4 && But1_pressed==true && wait==0){
+                    if(aMin%60==0){
+                        aMin=0;
+                    }else {aMin++;}
+
+                    wait=1;
+                }
+                if(focus==4 && But2_pressed==true && wait==0){
+                    if(aMin==0){
+                        aMin=59;
+                    }else {aMin--;}
+                    wait=1;
+                }
+                if(focus==4 && But3_pressed==true && wait==0){
+                    focus=5;
+                    redraw= true;
+                    wait=1;
+                }
+
+                //sends back to clock layout
+                if(focus==5 && But3_pressed==true && wait==0){
+                    status=0;
+                    redraw=true;
+                }
+           }
+
+
+           if(But1_pressed==false && But2_pressed==false && But3_pressed==false){
+               busy=false;
+           }
+
 
        }else if (status==2){
            //alarm fires
